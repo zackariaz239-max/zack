@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Submit Feedback</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; max-width: 720px; margin: 2rem auto; padding: 1rem; }
+    label { display:block; margin-top: .8rem; }
+    input, textarea, select { width: 100%; padding: .5rem; margin-top: .3rem; }
+    button { margin-top: 1rem; padding: .6rem 1rem; }
+    .info { margin-top: 1rem; background:#f1f1f1; padding: .8rem; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <h1>Send Feedback</h1>
+  <form id="feedbackForm">
+    <label>
+      Name (optional)
+      <input type="text" name="name" id="name" maxlength="100" />
+    </label>
+
+    <label>
+      Email (optional)
+      <input type="email" name="email" id="email" maxlength="254" />
+    </label>
+
+    <label>
+      Rating
+      <select name="rating" id="rating" required>
+        <option value="">-- choose --</option>
+        <option value="5">5 — Excellent</option>
+        <option value="4">4 — Good</option>
+        <option value="3">3 — Okay</option>
+        <option value="2">2 — Poor</option>
+        <option value="1">1 — Terrible</option>
+      </select>
+    </label>
+
+    <label>
+      Message
+      <textarea name="message" id="message" rows="6" required maxlength="2000"></textarea>
+    </label>
+
+    <button type="submit">Send feedback</button>
+  </form>
+
+  <div id="result" class="info" style="display:none;"></div>
+
+  <script>
+    const form = document.getElementById('feedbackForm');
+    const result = document.getElementById('result');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      result.style.display = 'none';
+      const payload = {
+        name: document.getElementById('name').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        rating: Number(document.getElementById('rating').value),
+        message: document.getElementById('message').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        result.style.display = 'block';
+        result.style.background = '#e6ffed';
+        result.textContent = 'Thanks — your feedback was submitted.';
+        form.reset();
+      } catch (err) {
+        result.style.display = 'block';
+        result.style.background = '#ffe6e6';
+        result.textContent = 'Error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
