@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Feedback</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+
+<style>
+  :root {
+    --bg: #f9fafb;
+    --card: #ffffff;
+    --primary: #2563eb;
+    --primary-dark: #1e4fcf;
+    --border: #d1d5db;
+    --text: #111827;
+    --radius: 10px;
+    --shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: "Inter", system-ui, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    align-items: center;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    padding: 2rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    animation: fadeIn .4s ease;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: .5rem;
+    text-align: center;
+  }
+
+  p.subtitle {
+    text-align: center;
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+  }
+
+  .field {
+    position: relative;
+    margin-top: 1rem;
+  }
+
+  .field input,
+  .field textarea,
+  .field select {
+    width: 100%;
+    padding: 1rem .75rem .6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 1rem;
+    background: #fff;
+    transition: .2s;
+  }
+
+  .field textarea { resize: vertical; }
+
+  .field input:focus,
+  .field textarea:focus,
+  .field select:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .25);
+  }
+
+  .field label {
+    position: absolute;
+    top: 1rem;
+    left: .75rem;
+    font-size: .9rem;
+    color: #6b7280;
+    pointer-events: none;
+    transition: .2s;
+  }
+
+  .field input:focus + label,
+  .field input:not(:placeholder-shown) + label,
+  .field textarea:focus + label,
+  .field textarea:not(:placeholder-shown) + label,
+  .field select:focus + label,
+  .field select:not([value=""]) + label {
+    top: .4rem;
+    font-size: .75rem;
+    color: var(--primary);
+  }
+
+  button {
+    width: 100%;
+    padding: 1rem;
+    background: var(--primary);
+    color: white;
+    font-size: 1rem;
+    border: none;
+    border-radius: var(--radius);
+    margin-top: 1.5rem;
+    cursor: pointer;
+    transition: .25s;
+    font-weight: 600;
+  }
+
+  button:hover { background: var(--primary-dark); }
+  button:disabled { opacity: .6; cursor: not-allowed; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    min-width: 220px;
+    padding: .9rem 1rem;
+    background: #22c55e;
+    color: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: none;
+    animation: slideUp .4s ease;
+  }
+  .toast.error { background: #ef4444; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px);}
+    to {opacity: 1; transform: translateY(0);}
+  }
+  @keyframes slideUp {
+    from {opacity: 0; transform: translateY(20px);}
+    to {opacity: 1; transform: translateY(0);}
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>We Value Your Feedback</h1>
+  <p class="subtitle">Help us improve your experience ✨</p>
+
+  <form id="feedbackForm" novalidate>
+    
+    <div class="field">
+      <input type="text" id="name" placeholder=" " maxlength="100">
+      <label for="name">Name (optional)</label>
+    </div>
+
+    <div class="field">
+      <input type="email" id="email" placeholder=" " maxlength="254">
+      <label for="email">Email (optional)</label>
+    </div>
+
+    <div class="field">
+      <select id="rating">
+        <option value=""></option>
+        <option value="5">⭐️⭐️⭐️⭐️⭐️ — Excellent</option>
+        <option value="4">⭐️⭐️⭐️⭐️ — Good</option>
+        <option value="3">⭐️⭐️⭐️ — Okay</option>
+        <option value="2">⭐️⭐️ — Poor</option>
+        <option value="1">⭐️ — Terrible</option>
+      </select>
+      <label for="rating">Rating *</label>
+    </div>
+
+    <div class="field">
+      <textarea id="message" rows="5" placeholder=" " maxlength="2000"></textarea>
+      <label for="message">Your message *</label>
+    </div>
+
+    <button id="submitBtn">Send feedback</button>
+  </form>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const form = document.getElementById('feedbackForm');
+const toast = document.getElementById('toast');
+const btn = document.getElementById('submitBtn');
+
+function showToast(type, msg) {
+  toast.className = "toast " + (type === "error" ? "error" : "");
+  toast.textContent = msg;
+  toast.style.display = "block";
+  setTimeout(() => toast.style.display = "none", 3000);
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const data = {
+    name: name.value.trim(),
+    email: email.value.trim(),
+    rating: Number(rating.value),
+    message: message.value.trim()
+  };
+
+  if (!data.rating || !data.message) {
+    showToast("error", "Please fill required fields");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Sending...";
+
+  try {
+    const res = await fetch('/api/feedback', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(data)
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Error");
+
+    showToast("success", "Thank you! Feedback sent ✅");
+    form.reset();
+  } catch (e) {
+    showToast("error", e.message);
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Send feedback";
+});
+</script>
+
+</body>
+</html>

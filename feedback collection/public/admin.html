@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Admin — Feedback</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; max-width: 1000px; margin: 2rem auto; padding: 1rem; }
+    input, select { padding: .5rem; margin-right: .5rem; }
+    table { width:100%; border-collapse: collapse; margin-top:1rem; }
+    th, td { padding: .5rem; border: 1px solid #ddd; text-align:left; vertical-align: top; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+  </style>
+</head>
+<body>
+  <h1>Admin: Feedback Viewer</h1>
+
+  <div>
+    <label>Admin Token: <input id="token" type="text" size="40" placeholder="paste ADMIN_TOKEN from .env"/></label>
+    <br/>
+    <label>Search: <input id="q" type="text" /></label>
+    <label>Sentiment:
+      <select id="sentiment">
+        <option value="">Any</option>
+        <option value="positive">positive</option>
+        <option value="neutral">neutral</option>
+        <option value="negative">negative</option>
+      </select>
+    </label>
+    <label>Rating:
+      <select id="rating"><option value="">Any</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+    </label>
+    <button id="loadBtn">Load</button>
+  </div>
+
+  <div id="meta" style="margin-top:.6rem; color: #555;"></div>
+
+  <table>
+    <thead>
+      <tr><th>When</th><th>Name / Email</th><th>Rating</th><th>Sentiment</th><th>Message</th><th>Meta</th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <script>
+    async function load(page=1) {
+      const token = document.getElementById('token').value.trim();
+      if (!token) { alert('Enter admin token'); return; }
+
+      const q = document.getElementById('q').value.trim();
+      const sentiment = document.getElementById('sentiment').value;
+      const rating = document.getElementById('rating').value;
+      const params = new URLSearchParams();
+      if (q) params.append('q', q);
+      if (sentiment) params.append('sentiment', sentiment);
+      if (rating) params.append('rating', rating);
+      params.append('page', page);
+      params.append('limit', 50);
+
+      try {
+        const res = await fetch('/api/admin/feedback?' + params.toString(), {
+          headers: { 'x-admin-token': token }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || JSON.stringify(data));
+        document.getElementById('meta').textContent = `Total: ${data.total} — Page: ${data.page} — Limit: ${data.limit}`;
+        const tbody = document.getElementById('rows');
+        tbody.innerHTML = '';
+        data.items.forEach(it => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${new Date(it.createdAt).toLocaleString()}</td>
+            <td><strong>${escapeHtml(it.name)}</strong><br/><small>${escapeHtml(it.email||'')}</small></td>
+            <td>${it.rating}</td>
+            <td>${it.sentiment}</td>
+            <td><pre>${escapeHtml(it.message)}</pre></td>
+            <td><pre>${escapeHtml(JSON.stringify(it.metadata || {}, null, 2))}</pre></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function escapeHtml(s) {
+      if (!s) return '';
+      return s.replace(/[&<>"']/g, function (m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); });
+    }
+
+    document.getElementById('loadBtn').addEventListener('click', () => load());
+  </script>
+</body>
+</html>
+
+
